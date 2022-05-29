@@ -34,7 +34,7 @@ module.exports = (app) => {
                 if(err) {
                     res.status(400).send({
                         message: err.message
-                    });fd
+                    });
                 }
                 res.send('User created successfully!')
             })
