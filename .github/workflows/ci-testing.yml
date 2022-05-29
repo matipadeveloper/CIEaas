@@ -1,0 +1,33 @@
+name: CI Testing Workflow
+
+on: pull_request
+   types: [opened, reopened, synchronized]
+
+jobs:
+  application-specific-testing:
+    runs-on: ubuntu-latest
+    services: 
+        app:
+          image: matipadocker/node-image
+          ports:
+            - "3001:3000"
+        mongo:
+          image: mongo
+          ports:
+          - "27017:27017"
+    steps:
+      - name: Post a user
+        run: "curl -X POST http://localhost:3001/api/user -H 'Content-Type: application/json' -d '{\"username\": \"hello\", \"address\": \"dwded\"}'"
+      - name: Get Users
+        run: curl -X GET http://localhost:3001/api/users
+  sonarqube:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: SonarScan
+      uses: sonarsource/sonarqube-scan-action@master
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
