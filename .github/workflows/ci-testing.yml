@@ -1,7 +1,6 @@
 name: CI Testing Workflow
 
 on: pull_request
-   types: [opened, reopened, synchronized]
 
 jobs:
   application-specific-testing:
