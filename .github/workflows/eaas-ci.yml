@@ -41,13 +41,13 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   #This is the job for docker build and ECR integration
-  ecr-integration:
+  ecrintegration:
     name: ECR Integration
     runs-on: ubuntu-latest
+    needs: ["testing", "sonarscan"]
     steps:
     - name: Check out code
       uses: actions/checkout@v2
-    
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -66,4 +66,3 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
