@@ -26,6 +26,8 @@ jobs:
     name: SonarScan
     runs-on: self-hosted
     steps:
+      - name: Become sudoer
+        run: sudo -i
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0  
