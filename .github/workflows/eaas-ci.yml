@@ -5,7 +5,7 @@ on: pull_request
 jobs:
   #This is the job for application specific testing
   testing:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     services: 
         app:
           image: matipadocker/node-image
@@ -24,7 +24,7 @@ jobs:
   #This is the job for the SonarScanner 
   sonarscan:
     name: SonarScan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
         with:
@@ -43,7 +43,7 @@ jobs:
   #This is the job for docker build and ECR integration
   ecrintegration:
     name: ECR Integration
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: ["testing", "sonarscan"]
     steps:
     - name: Check out code
