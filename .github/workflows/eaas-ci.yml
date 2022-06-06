@@ -1,0 +1,72 @@
+name: Eaas CI Workflow
+
+on: pull_request
+
+jobs:
+  #This is the job for application specific testing
+  testing:
+    runs-on: self-hosted
+    services: 
+        app:
+          image: matipadocker/node-image
+          ports:
+            - "3001:3000"
+        mongo:
+          image: mongo
+          ports:
+          - "27017:27017"
+    steps:
+      - name: Create a user
+        run: "curl -X POST http://localhost:3001/api/user -H 'Content-Type: application/json' -d '{\"username\": \"hello\", \"address\": \"dwded\"}'"
+      - name: Get Users
+        run: curl -X GET http://localhost:3001/api/users
+
+  #This is the job for the SonarScanner 
+  sonarscan:
+    name: SonarScan
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: SonarQube Quality Gate check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  #This is the job for docker build and ECR integration
+  ecrintegration:
+    name: ECR Integration
+    runs-on: self-hosted
+    needs: ["testing", "sonarscan"]
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: af-south-1
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: cieaas
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+
+# docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+# docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
